@@ -13,33 +13,38 @@ namespace EagleEyeLogger
         {
             // Retrieve database provider and connection string from configuration
             var databaseProvider = configuration.GetValue<string>("DatabaseProvider");
-            var connectionString = configuration.GetConnectionString("EagleEyeLoggerConnection");
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            var AssemblyMigrationName = configuration.GetValue<string>("MigrationAssemblyName");
 
             // Configure DbContext based on database provider
-            ConfigureDbContext(services, databaseProvider, connectionString);
+            ConfigureDbContext(services, databaseProvider, connectionString, AssemblyMigrationName);
 
             return services;
         }
 
-        private static void ConfigureDbContext(IServiceCollection services, string databaseProvider, string connectionString)
+        private static void ConfigureDbContext(IServiceCollection services, string databaseProvider, string connectionString, string assemblyName)
         {
+
             switch (databaseProvider.ToLower())
             {
                 case "sqlserver":
+                    Console.WriteLine("Sql Service will be used");
+                    Console.WriteLine("Assembly is: "+ assemblyName);
+
                     services.AddDbContext<LoggingDbContext>(options =>
-                        options.UseSqlServer(connectionString));
+                        options.UseSqlServer(connectionString, b=>b.MigrationsAssembly(assemblyName)));
                     break;
                 case "mysql":
                     services.AddDbContext<LoggingDbContext>(options =>
-                        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+                        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), b => b.MigrationsAssembly(assemblyName)));
                     break;
                 case "postgresql":
                     services.AddDbContext<LoggingDbContext>(options =>
-                        options.UseNpgsql(connectionString));
+                        options.UseNpgsql(connectionString, b => b.MigrationsAssembly(assemblyName)));
                     break;
                 case "sqlite":
                     services.AddDbContext<LoggingDbContext>(options =>
-                        options.UseSqlite(connectionString));
+                        options.UseSqlite(connectionString, b => b.MigrationsAssembly(assemblyName)));
                     break;
                 default:
                     throw new NotSupportedException($"The database provider {databaseProvider} is not supported.");
